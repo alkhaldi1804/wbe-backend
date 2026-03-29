@@ -104,3 +104,8 @@ def identity_scan(value: str):
 
     except Exception as e:
         return {"error": str(e)}
+
+
+@app.get("/test")
+def test():
+    return {"msg": "ok"}
