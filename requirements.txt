@@ -11,3 +11,4 @@ email-validator==2.3.0
 
 python-magic==0.4.27
 pefile==2023.2.7
+yara-python
