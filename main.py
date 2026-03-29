@@ -18,7 +18,7 @@ app = FastAPI(
 # 🔥 CORS FIX (مهم جداً)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # لاحقاً نقدر نحط موقعك فقط
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -27,6 +27,13 @@ app.add_middleware(
 # Upload folder
 UPLOAD_FOLDER = "uploads"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+# -----------------------------
+# ✅ TEST ENDPOINT (مهم للتشخيص)
+# -----------------------------
+@app.get("/test")
+def test():
+    return {"msg": "ok"}
 
 # Root
 @app.get("/")
@@ -104,8 +111,3 @@ def identity_scan(value: str):
 
     except Exception as e:
         return {"error": str(e)}
-
-
-@app.get("/test")
-def test():
-    return {"msg": "ok"}
