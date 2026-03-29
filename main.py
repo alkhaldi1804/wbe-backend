@@ -15,10 +15,10 @@ app = FastAPI(
     version="1.0"
 )
 
-# Enable CORS
+# 🔥 CORS FIX (مهم جداً)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["*"],  # لاحقاً نقدر نحط موقعك فقط
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -47,48 +47,60 @@ def home():
 # -----------------------------
 @app.get("/whois")
 def whois_lookup(domain: str):
-    return run_whois(domain)
+    try:
+        return run_whois(domain)
+    except Exception as e:
+        return {"error": str(e)}
 
 # -----------------------------
 # Email Checker
 # -----------------------------
 @app.get("/email")
 def email_lookup(email: str):
-    return check_email(email)
+    try:
+        return check_email(email)
+    except Exception as e:
+        return {"error": str(e)}
 
 # -----------------------------
 # Binary Analyzer
 # -----------------------------
 @app.post("/binary-analyze")
-async def binary_analyze(file: UploadFile = File(...)):
-
-    safe_filename = os.path.basename(file.filename).replace(" ", "_")
-    file_path = os.path.join(UPLOAD_FOLDER, safe_filename)
-
-    with open(file_path, "wb") as f:
-        f.write(await file.read())
-
-    result = analyze_binary(file_path)
-
+async def binary_analyze_endpoint(file: UploadFile = File(...)):
     try:
-        os.remove(file_path)
-    except:
-        pass
+        safe_filename = os.path.basename(file.filename).replace(" ", "_")
+        file_path = os.path.join(UPLOAD_FOLDER, safe_filename)
 
-    return {
-        "status": "success",
-        "analysis": result
-    }
+        with open(file_path, "wb") as f:
+            f.write(await file.read())
+
+        result = analyze_binary(file_path)
+
+        try:
+            os.remove(file_path)
+        except:
+            pass
+
+        return {
+            "status": "success",
+            "analysis": result
+        }
+
+    except Exception as e:
+        return {"error": str(e)}
 
 # -----------------------------
-# 🔥 Identity Exposure Scanner
+# Identity Exposure Scanner
 # -----------------------------
 @app.get("/identity")
 def identity_scan(value: str):
+    try:
+        result = analyze_identity(value)
 
-    result = analyze_identity(value)
+        return {
+            "input": value,
+            "analysis": result
+        }
 
-    return {
-        "input": value,
-        "analysis": result
-    }
+    except Exception as e:
+        return {"error": str(e)}
