@@ -28,13 +28,6 @@ app.add_middleware(
 UPLOAD_FOLDER = "uploads"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-# -----------------------------
-# ✅ TEST ENDPOINT (مهم للتشخيص)
-# -----------------------------
-@app.get("/test")
-def test():
-    return {"msg": "ok"}
-
 # Root
 @app.get("/")
 def home():
