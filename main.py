@@ -1,5 +1,6 @@
-from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi import FastAPI, UploadFile, File, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 import os
@@ -7,7 +8,7 @@ import bcrypt
 import uuid
 
 # 🔥 JWT
-from jose import jwt
+from jose import jwt, JWTError
 from datetime import datetime, timedelta
 
 # 🔥 Database
@@ -26,6 +27,26 @@ from tools.identity_scanner import analyze_identity
 SECRET_KEY = "9f8d7a6b5c4e3f2a1b0c9d8e7f6a5b4c"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60
+
+# -----------------------------
+# SECURITY
+# -----------------------------
+security = HTTPBearer()
+
+def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    token = credentials.credentials
+
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        email = payload.get("sub")
+
+        if email is None:
+            raise HTTPException(status_code=401, detail="Invalid token")
+
+        return email
+
+    except JWTError:
+        raise HTTPException(status_code=401, detail="Invalid token")
 
 # Create FastAPI app
 app = FastAPI(
@@ -136,14 +157,15 @@ async def binary_analyze_endpoint(file: UploadFile = File(...)):
         return {"error": str(e)}
 
 # -----------------------------
-# Identity Exposure Scanner
+# Identity Exposure Scanner (🔒 Protected)
 # -----------------------------
 @app.get("/identity")
-def identity_scan(value: str):
+def identity_scan(value: str, user: str = Depends(get_current_user)):
     try:
         result = analyze_identity(value)
 
         return {
+            "user": user,
             "input": value,
             "analysis": result
         }
