@@ -213,11 +213,13 @@ async def signup(data: SignupRequest):
     db.commit()
     db.refresh(new_user)
 
-    # 🔥 FIXED (بدون error)
-    await send_verification_email(
-        new_user.email,
-        token,
-        new_user.first_name
+    # 🔥 BACKGROUND TASK (بدون انتظار)
+    asyncio.get_event_loop().create_task(
+        send_verification_email(
+            new_user.email,
+            token,
+            new_user.first_name
+        )
     )
 
     db.close()
