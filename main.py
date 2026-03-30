@@ -185,7 +185,7 @@ def identity_scan(value: str, user: str = Depends(get_current_user)):
 # Signup API (🔥 UPDATED)
 # -----------------------------
 @app.post("/signup")
-def signup(data: SignupRequest):
+async def signup(data: SignupRequest):
 
     db: Session = SessionLocal()
 
@@ -213,13 +213,11 @@ def signup(data: SignupRequest):
     db.commit()
     db.refresh(new_user)
 
-    # 🔥🔥🔥 SEND EMAIL
-    asyncio.create_task(
-        send_verification_email(
-            new_user.email,
-            token,
-            new_user.first_name
-        )
+    # 🔥 FIXED (بدون error)
+    await send_verification_email(
+        new_user.email,
+        token,
+        new_user.first_name
     )
 
     db.close()
