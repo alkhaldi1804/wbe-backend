@@ -1,11 +1,11 @@
 from fastapi_mail import FastMail, MessageSchema, ConnectionConfig
 from pydantic import EmailStr
+import os
 
-# 🔥 SMTP CONFIG (Brevo)
 conf = ConnectionConfig(
-    MAIL_USERNAME="a6920b001@smtp-brevo.com",
-    MAIL_PASSWORD="a2ZzNFcCJGnLdXTK",
-    MAIL_FROM="a6920b001@smtp-brevo.com",
+    MAIL_USERNAME=os.getenv("MAIL_USERNAME"),
+    MAIL_PASSWORD=os.getenv("MAIL_PASSWORD"),
+    MAIL_FROM=os.getenv("MAIL_FROM"),
 
     MAIL_PORT=587,
     MAIL_SERVER="smtp-relay.brevo.com",
@@ -15,7 +15,6 @@ conf = ConnectionConfig(
     USE_CREDENTIALS=True
 )
 
-# 🔥 SEND EMAIL FUNCTION
 async def send_verification_email(email: EmailStr, token: str, first_name: str):
     link = f"https://api.wbe-tools.online/verify?token={token}"
 
@@ -34,7 +33,7 @@ async def send_verification_email(email: EmailStr, token: str, first_name: str):
 
           <p style="text-align:left;line-height:1.6;">
             Thank you for joining <b>WBE Cybersecurity Tools</b>.<br><br>
-            To activate your account, please verify your email address by clicking the button below.
+            Please verify your email by clicking the button below.
           </p>
 
           <a href="{link}" 
@@ -43,7 +42,7 @@ async def send_verification_email(email: EmailStr, token: str, first_name: str):
           </a>
 
           <p style="font-size:13px;margin-top:25px;color:#ccc;">
-            If you did not create this account, you can safely ignore this email.
+            If you did not create this account, ignore this email.
           </p>
 
           <hr style="margin:25px 0;border-color:rgba(255,255,255,0.1);" />
