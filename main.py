@@ -267,3 +267,28 @@ def login(data: LoginRequest):
         "access_token": token,
         "token_type": "bearer"
     }
+
+
+# -----------------------------
+# Get Current User (JWT)
+# -----------------------------
+@app.get("/me")
+def get_me(user_email: str = Depends(get_current_user)):
+
+    db: Session = SessionLocal()
+
+    user = db.query(User).filter(User.email == user_email).first()
+
+    if not user:
+        db.close()
+        raise HTTPException(status_code=404, detail="User not found")
+
+    data = {
+        "first_name": user.first_name,
+        "last_name": user.last_name,
+        "email": user.email
+    }
+
+    db.close()
+
+    return data
