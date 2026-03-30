@@ -168,3 +168,27 @@ def signup(data: SignupRequest):
         "message": "User created successfully",
         "verification_token": token
     }
+
+# -----------------------------
+# Email Verification API
+# -----------------------------
+@app.get("/verify")
+def verify_email(token: str):
+
+    db: Session = SessionLocal()
+
+    user = db.query(User).filter(User.verification_token == token).first()
+
+    if not user:
+        db.close()
+        raise HTTPException(status_code=400, detail="Invalid token")
+
+    user.is_verified = True
+    user.verification_token = None
+
+    db.commit()
+    db.close()
+
+    return {
+        "message": "Email verified successfully"
+    }
