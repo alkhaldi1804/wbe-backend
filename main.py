@@ -2,6 +2,10 @@ from fastapi import FastAPI, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 import os
 
+# 🔥 NEW: Database imports
+from database import engine
+from models import Base
+
 # Import tools
 from tools.whois_tool import run_whois
 from tools.email_checker import check_email
@@ -14,6 +18,9 @@ app = FastAPI(
     description="Backend API for WBE Cybersecurity Tools",
     version="1.0"
 )
+
+# 🔥 NEW: Create tables (users)
+Base.metadata.create_all(bind=engine)
 
 # 🔥 CORS FIX (مهم جداً)
 app.add_middleware(
