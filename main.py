@@ -6,6 +6,10 @@ import os
 import bcrypt
 import uuid
 
+# 🔥 JWT
+from jose import jwt
+from datetime import datetime, timedelta
+
 # 🔥 Database
 from database import engine, SessionLocal
 from models import Base, User
@@ -15,6 +19,13 @@ from tools.whois_tool import run_whois
 from tools.email_checker import check_email
 from tools.binary_analyzer import analyze_binary
 from tools.identity_scanner import analyze_identity
+
+# -----------------------------
+# JWT CONFIG
+# -----------------------------
+SECRET_KEY = "9f8d7a6b5c4e3f2a1b0c9d8e7f6a5b4c"
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 60
 
 # Create FastAPI app
 app = FastAPI(
@@ -40,13 +51,26 @@ UPLOAD_FOLDER = "uploads"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 # -----------------------------
-# Request Model
+# Request Models
 # -----------------------------
 class SignupRequest(BaseModel):
     first_name: str
     last_name: str
     email: str
     password: str
+
+class LoginRequest(BaseModel):
+    email: str
+    password: str
+
+# -----------------------------
+# JWT Function
+# -----------------------------
+def create_access_token(data: dict):
+    to_encode = data.copy()
+    expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    to_encode.update({"exp": expire})
+    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
 # -----------------------------
 # Root
@@ -135,22 +159,18 @@ def signup(data: SignupRequest):
 
     db: Session = SessionLocal()
 
-    # Check email
     existing_user = db.query(User).filter(User.email == data.email).first()
     if existing_user:
         db.close()
         raise HTTPException(status_code=400, detail="Email already exists")
 
-    # Hash password
     hashed_password = bcrypt.hashpw(
         data.password.encode("utf-8"),
         bcrypt.gensalt()
     ).decode("utf-8")
 
-    # Generate verification token
     token = str(uuid.uuid4())
 
-    # Create user
     new_user = User(
         first_name=data.first_name,
         last_name=data.last_name,
@@ -191,4 +211,37 @@ def verify_email(token: str):
 
     return {
         "message": "Email verified successfully"
+    }
+
+# -----------------------------
+# Login API (JWT)
+# -----------------------------
+@app.post("/login")
+def login(data: LoginRequest):
+
+    db: Session = SessionLocal()
+
+    user = db.query(User).filter(User.email == data.email).first()
+
+    if not user:
+        db.close()
+        raise HTTPException(status_code=400, detail="Invalid email or password")
+
+    if not bcrypt.checkpw(data.password.encode(), user.password.encode()):
+        db.close()
+        raise HTTPException(status_code=400, detail="Invalid email or password")
+
+    if not user.is_verified:
+        db.close()
+        raise HTTPException(status_code=403, detail="Email not verified")
+
+    token = create_access_token({
+        "sub": user.email
+    })
+
+    db.close()
+
+    return {
+        "access_token": token,
+        "token_type": "bearer"
     }
