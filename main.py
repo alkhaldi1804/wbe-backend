@@ -1,12 +1,16 @@
 from fastapi import FastAPI, UploadFile, File, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from fastapi.staticfiles import StaticFiles  # 🔥 NEW
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 import os
 import bcrypt
 import uuid
+import asyncio  # 🔥 NEW
+
+# 🔥 EMAIL
+from email_utils import send_verification_email  # 🔥 NEW
 
 # 🔥 JWT
 from jose import jwt, JWTError
@@ -56,7 +60,7 @@ app = FastAPI(
     version="1.0"
 )
 
-# 🔥 NEW (static folder for images)
+# Static files
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # Create tables
@@ -178,7 +182,7 @@ def identity_scan(value: str, user: str = Depends(get_current_user)):
         return {"error": str(e)}
 
 # -----------------------------
-# Signup API
+# Signup API (🔥 UPDATED)
 # -----------------------------
 @app.post("/signup")
 def signup(data: SignupRequest):
@@ -208,6 +212,16 @@ def signup(data: SignupRequest):
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
+
+    # 🔥🔥🔥 SEND EMAIL
+    asyncio.create_task(
+        send_verification_email(
+            new_user.email,
+            token,
+            new_user.first_name
+        )
+    )
+
     db.close()
 
     return {
