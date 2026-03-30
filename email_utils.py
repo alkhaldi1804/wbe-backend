@@ -1,68 +1,63 @@
-from fastapi_mail import FastMail, MessageSchema, ConnectionConfig
-from pydantic import EmailStr
 import os
+import requests
 
-conf = ConnectionConfig(
-    MAIL_USERNAME=os.getenv("MAIL_USERNAME"),
-    MAIL_PASSWORD=os.getenv("MAIL_PASSWORD"),
-    MAIL_FROM=os.getenv("MAIL_FROM"),
+async def send_verification_email(email: str, token: str, first_name: str):
+    print("🔥 Sending email via API to:", email)
 
-    MAIL_PORT=587,
-    MAIL_SERVER="smtp-relay.brevo.com",
+    api_key = os.getenv("BREVO_API_KEY")
 
-    MAIL_STARTTLS=True,
-    MAIL_SSL_TLS=False,
-    USE_CREDENTIALS=True
-)
+    url = "https://api.brevo.com/v3/smtp/email"
 
-async def send_verification_email(email: EmailStr, token: str, first_name: str):
     link = f"https://api.wbe-tools.online/verify?token={token}"
 
-    html = f"""
-    <html>
-      <body style="font-family: Arial; background:#0f172a; padding:20px; color:white;">
-        <div style="max-width:500px;margin:auto;background:rgba(255,255,255,0.05);padding:25px;border-radius:15px;text-align:center;">
-          
-          <img src="https://api.wbe-tools.online/static/email_logo.jpeg" style="width:80px;margin-bottom:15px;" />
+    headers = {
+        "accept": "application/json",
+        "api-key": api_key,
+        "content-type": "application/json"
+    }
 
-          <h2 style="color:#00C6FF;">Welcome to WBE Tools 🚀</h2>
+    data = {
+        "sender": {
+            "name": "WBE Security",
+            "email": "ak_18112@outlook.com"
+        },
+        "to": [
+            {
+                "email": email,
+                "name": first_name
+            }
+        ],
+        "subject": "Verify your WBE account",
+        "htmlContent": f"""
+        <html>
+          <body style="font-family: Arial; background:#0f172a; padding:20px; color:white;">
+            <div style="max-width:500px;margin:auto;background:rgba(255,255,255,0.05);padding:25px;border-radius:15px;text-align:center;">
+              
+              <img src="https://api.wbe-tools.online/static/email_logo.jpeg" style="width:80px;margin-bottom:15px;" />
 
-          <p style="text-align:left;">
-            Dear <b>{first_name}</b>,
-          </p>
+              <h2 style="color:#00C6FF;">Welcome to WBE Tools 🚀</h2>
 
-          <p style="text-align:left;line-height:1.6;">
-            Thank you for joining <b>WBE Cybersecurity Tools</b>.<br><br>
-            Please verify your email by clicking the button below.
-          </p>
+              <p style="text-align:left;">
+                Dear <b>{first_name}</b>,
+              </p>
 
-          <a href="{link}" 
-             style="display:inline-block;margin-top:20px;padding:12px 25px;background:linear-gradient(90deg,#0072FF,#00C6FF);color:white;text-decoration:none;border-radius:25px;font-weight:bold;">
-             Verify Email
-          </a>
+              <p style="text-align:left;">
+                Please verify your email by clicking the button below.
+              </p>
 
-          <p style="font-size:13px;margin-top:25px;color:#ccc;">
-            If you did not create this account, ignore this email.
-          </p>
+              <a href="{link}" style="display:inline-block;padding:12px 25px;background:#0072FF;color:white;text-decoration:none;border-radius:20px;">
+                Verify Email
+              </a>
 
-          <hr style="margin:25px 0;border-color:rgba(255,255,255,0.1);" />
+              <p style="margin-top:20px;">Regards,<br><b>WBE Team</b></p>
+            </div>
+          </body>
+        </html>
+        """
+    }
 
-          <p style="text-align:left;">
-            Regards,<br>
-            <b>WBE Security Team</b>
-          </p>
-
-        </div>
-      </body>
-    </html>
-    """
-
-    message = MessageSchema(
-        subject="Verify your WBE account",
-        recipients=[email],
-        body=html,
-        subtype="html"
-    )
-
-    fm = FastMail(conf)
-    await fm.send_message(message)
+    try:
+        response = requests.post(url, headers=headers, json=data)
+        print("📧 Brevo response:", response.text)
+    except Exception as e:
+        print("❌ Email error:", str(e))
