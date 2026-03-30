@@ -1,6 +1,7 @@
 from fastapi import FastAPI, UploadFile, File, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi.staticfiles import StaticFiles  # 🔥 NEW
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 import os
@@ -54,6 +55,9 @@ app = FastAPI(
     description="Backend API for WBE Cybersecurity Tools",
     version="1.0"
 )
+
+# 🔥 NEW (static folder for images)
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # Create tables
 Base.metadata.create_all(bind=engine)
@@ -267,7 +271,6 @@ def login(data: LoginRequest):
         "access_token": token,
         "token_type": "bearer"
     }
-
 
 # -----------------------------
 # Get Current User (JWT)
