@@ -303,7 +303,8 @@ def get_me(user_email: str = Depends(get_current_user)):
     data = {
         "first_name": user.first_name,
         "last_name": user.last_name,
-        "email": user.email
+        "email": user.email,
+        "is_verified": user.is_verified  # 🔥 الإضافة المهمة
     }
 
     db.close()
