@@ -1,3 +1,4 @@
+from fastapi.responses import RedirectResponse
 from fastapi import FastAPI, UploadFile, File, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
@@ -8,6 +9,7 @@ import os
 import bcrypt
 import uuid
 import asyncio  # 🔥 NEW
+
 
 # 🔥 EMAIL
 from email_utils import send_verification_email  # 🔥 NEW
@@ -249,9 +251,10 @@ def verify_email(token: str):
     db.commit()
     db.close()
 
-    return {
-        "message": "Email verified successfully"
-    }
+    # 🔥 redirect للموقع أو التطبيق
+    return RedirectResponse(
+        url="https://wbe-tools.online/verified-success"
+    )
 
 # -----------------------------
 # Login API (JWT)
