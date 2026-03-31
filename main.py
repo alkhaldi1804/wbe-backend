@@ -376,10 +376,12 @@ async def request_password_reset(data: EmailRequest):
     user.reset_token = token
     db.commit()
 
-    # 🔥 إرسال الإيميل (نفس نظامك)
-    link = f"https://api.wbe-tools.online/reset-password?token={token}"
-
-    print("🔗 RESET LINK:", link)
+    # 🔥 إرسال الإيميل (تم التعديل فقط هنا)
+    await send_reset_email(
+        user.email,
+        token,
+        user.first_name
+    )
 
     db.close()
 
@@ -405,34 +407,3 @@ def reset_password_page(token: str):
     """)
 
 
-# -----------------------------
-# Reset Password Request API (🔥 NEW)
-# -----------------------------
-@app.post("/request-password-reset")
-async def request_password_reset(data: EmailRequest):
-
-    db: Session = SessionLocal()
-
-    user = db.query(User).filter(User.email == data.email).first()
-
-    if not user:
-        db.close()
-        raise HTTPException(status_code=404, detail="Email not found")
-
-    token = str(uuid.uuid4())
-
-    user.reset_token = token
-    db.commit()
-
-    # 🔥 إرسال الإيميل (تم التعديل فقط هنا)
-    await send_reset_email(
-        user.email,
-        token,
-        user.first_name
-    )
-
-    db.close()
-
-    return {
-        "message": "Reset email sent"
-    }
