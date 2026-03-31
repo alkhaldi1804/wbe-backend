@@ -404,30 +404,33 @@ def reset_password_page(token: str):
 
 
 # -----------------------------
-# Reset Password API (🔥 NEW)
+# Reset Password Request API (🔥 NEW)
 # -----------------------------
-@app.post("/reset-password")
-async def reset_password(data: ResetPasswordRequest):
+@app.post("/request-password-reset")
+async def request_password_reset(data: EmailRequest):
 
     db: Session = SessionLocal()
 
-    user = db.query(User).filter(User.reset_token == data.token).first()
+    user = db.query(User).filter(User.email == data.email).first()
 
     if not user:
         db.close()
-        raise HTTPException(status_code=400, detail="Invalid or expired token")
+        raise HTTPException(status_code=404, detail="Email not found")
 
-    hashed_password = bcrypt.hashpw(
-        data.new_password.encode("utf-8"),
-        bcrypt.gensalt()
-    ).decode("utf-8")
+    token = str(uuid.uuid4())
 
-    user.password = hashed_password
-    user.reset_token = None
-
+    user.reset_token = token
     db.commit()
+
+    # 🔥 إرسال الإيميل (تم التعديل فقط هنا)
+    await send_reset_email(
+        user.email,
+        token,
+        user.first_name
+    )
+
     db.close()
 
     return {
-        "message": "Password updated successfully"
+        "message": "Reset email sent"
     }
