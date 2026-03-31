@@ -201,7 +201,6 @@ async def signup(data: SignupRequest):
         bcrypt.gensalt()
     ).decode("utf-8")
 
-    # 🔥 token للإيميل (لا تغيّره)
     verification_token = str(uuid.uuid4())
 
     new_user = User(
@@ -216,16 +215,13 @@ async def signup(data: SignupRequest):
     db.commit()
     db.refresh(new_user)
 
-    # 🔥 إرسال الإيميل (بدون انتظار)
-    asyncio.get_event_loop().create_task(
-        send_verification_email(
-            new_user.email,
-            verification_token,
-            new_user.first_name
-        )
+    # ✅🔥 الإصلاح هنا
+    await send_verification_email(
+        new_user.email,
+        verification_token,
+        new_user.first_name
     )
 
-    # 🔥🔥🔥 أهم إضافة: إنشاء JWT للتطبيق
     access_token = create_access_token({
         "sub": new_user.email
     })
@@ -234,7 +230,7 @@ async def signup(data: SignupRequest):
 
     return {
         "message": "User created successfully",
-        "access_token": access_token  # 🔥 هذا المهم
+        "access_token": access_token
     }
 
 # -----------------------------
