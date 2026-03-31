@@ -201,34 +201,40 @@ async def signup(data: SignupRequest):
         bcrypt.gensalt()
     ).decode("utf-8")
 
-    token = str(uuid.uuid4())
+    # 🔥 token للإيميل (لا تغيّره)
+    verification_token = str(uuid.uuid4())
 
     new_user = User(
         first_name=data.first_name,
         last_name=data.last_name,
         email=data.email,
         password=hashed_password,
-        verification_token=token
+        verification_token=verification_token
     )
 
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
 
-    # 🔥 BACKGROUND TASK (بدون انتظار)
+    # 🔥 إرسال الإيميل (بدون انتظار)
     asyncio.get_event_loop().create_task(
         send_verification_email(
             new_user.email,
-            token,
+            verification_token,
             new_user.first_name
         )
     )
+
+    # 🔥🔥🔥 أهم إضافة: إنشاء JWT للتطبيق
+    access_token = create_access_token({
+        "sub": new_user.email
+    })
 
     db.close()
 
     return {
         "message": "User created successfully",
-        "verification_token": token
+        "access_token": access_token  # 🔥 هذا المهم
     }
 
 # -----------------------------
