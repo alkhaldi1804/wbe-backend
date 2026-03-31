@@ -73,7 +73,7 @@ async def send_reset_email(email: str, token: str, first_name: str):
 
     url = "https://api.brevo.com/v3/smtp/email"
 
-    link = f"https://api.wbe-tools.online/reset-password?token={token}"
+    link = f"https://wbe-tools.online/#/reset-password?token={token}"
 
     headers = {
         "accept": "application/json",
