@@ -234,7 +234,9 @@ async def signup(data: SignupRequest):
 # -----------------------------
 # Email Verification API
 # -----------------------------
-@app.get("/verify")
+from fastapi.responses import HTMLResponse
+
+@app.get("/verify", response_class=HTMLResponse)
 def verify_email(token: str):
 
     db: Session = SessionLocal()
@@ -243,7 +245,29 @@ def verify_email(token: str):
 
     if not user:
         db.close()
-        raise HTTPException(status_code=400, detail="Invalid token")
+        return HTMLResponse(content="""
+        <html>
+        <body style="background:#0f172a;display:flex;justify-content:center;align-items:center;height:100vh;color:white;">
+        <div style="text-align:center;">
+        <h1 style="color:red;">❌ Invalid Link</h1>
+        <p>This verification link is invalid or expired.</p>
+        </div>
+        </body>
+        </html>
+        """)
+
+    if user.is_verified:
+        db.close()
+        return HTMLResponse(content="""
+        <html>
+        <body style="background:#0f172a;display:flex;justify-content:center;align-items:center;height:100vh;color:white;">
+        <div style="text-align:center;">
+        <h1 style="color:orange;">⚠️ Already Verified</h1>
+        <p>This email is already verified.</p>
+        </div>
+        </body>
+        </html>
+        """)
 
     user.is_verified = True
     user.verification_token = None
@@ -251,10 +275,16 @@ def verify_email(token: str):
     db.commit()
     db.close()
 
-    # 🔥 redirect للموقع (مهم جدًا)
-    return RedirectResponse(
-        url="https://wbe-tools.online"  # تقدر تغيرها لأي صفحة عندك
-    )
+    return HTMLResponse(content="""
+    <html>
+    <body style="background:#0f172a;display:flex;justify-content:center;align-items:center;height:100vh;color:white;">
+    <div style="text-align:center;">
+    <h1 style="color:#00FF99;">✅ Email Verified</h1>
+    <p>You can now return to the app.</p>
+    </div>
+    </body>
+    </html>
+    """)
 # -----------------------------
 # Login API (JWT)
 # -----------------------------
