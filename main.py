@@ -234,69 +234,27 @@ async def signup(data: SignupRequest):
 # -----------------------------
 # Email Verification API
 # -----------------------------
-@app.get("/verify", response_class=HTMLResponse)
+@app.get("/verify")
 def verify_email(token: str):
 
     db: Session = SessionLocal()
 
     user = db.query(User).filter(User.verification_token == token).first()
 
-    # ❌ توكن غير صحيح أو مستخدم
     if not user:
         db.close()
+        raise HTTPException(status_code=400, detail="Invalid token")
 
-        return """
-        <html>
-        <head>
-        <title>Verification Failed</title>
-        </head>
-        <body style="background:#0f172a;display:flex;justify-content:center;align-items:center;height:100vh;color:white;font-family:sans-serif;">
-        
-        <div style="text-align:center;background:rgba(255,255,255,0.05);padding:30px;border-radius:15px;">
-            <h1 style="color:red;">❌ Invalid or Expired Link</h1>
-            <p>This verification link is no longer valid.</p>
-        </div>
-
-        </body>
-        </html>
-        """
-
-    # ❗ إذا مفعل مسبقًا
-    if user.is_verified:
-        db.close()
-
-        return f"""
-        <html>
-        <body style="background:#0f172a;display:flex;justify-content:center;align-items:center;height:100vh;color:white;font-family:sans-serif;">
-        
-        <div style="text-align:center;background:rgba(255,255,255,0.05);padding:30px;border-radius:15px;">
-            <h1 style="color:orange;">⚠️ Already Verified</h1>
-            <p>This email has already been verified.</p>
-        </div>
-
-        </body>
-        </html>
-        """
-
-    # ✅ تفعيل الحساب
     user.is_verified = True
     user.verification_token = None
 
     db.commit()
     db.close()
 
-    return f"""
-    <html>
-    <body style="background:#0f172a;display:flex;justify-content:center;align-items:center;height:100vh;color:white;font-family:sans-serif;">
-    
-    <div style="text-align:center;background:rgba(255,255,255,0.05);padding:30px;border-radius:15px;">
-        <h1 style="color:#00FF99;">✅ Email Verified Successfully</h1>
-        <p>You can now return to the app and continue.</p>
-    </div>
-
-    </body>
-    </html>
-    """
+    # 🔥 redirect للموقع (مهم جدًا)
+    return RedirectResponse(
+        url="https://wbe-tools.online"  # تقدر تغيرها لأي صفحة عندك
+    )
 # -----------------------------
 # Login API (JWT)
 # -----------------------------
