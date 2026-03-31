@@ -344,3 +344,90 @@ def get_me(user_email: str = Depends(get_current_user)):
     db.close()
 
     return data
+
+# -----------------------------
+# Reset Password Models (🔥 NEW)
+# -----------------------------
+class EmailRequest(BaseModel):
+    email: str
+
+class ResetPasswordRequest(BaseModel):
+    token: str
+    new_password: str
+
+# -----------------------------
+# Reset Password Request API (🔥 NEW)
+# -----------------------------
+@app.post("/request-password-reset")
+async def request_password_reset(data: EmailRequest):
+
+    db: Session = SessionLocal()
+
+    user = db.query(User).filter(User.email == data.email).first()
+
+    if not user:
+        db.close()
+        raise HTTPException(status_code=404, detail="Email not found")
+
+    token = str(uuid.uuid4())
+
+    user.reset_token = token
+    db.commit()
+
+    # 🔥 إرسال الإيميل (نفس نظامك)
+    link = f"https://api.wbe-tools.online/reset-password?token={token}"
+
+    print("🔗 RESET LINK:", link)
+
+    db.close()
+
+    return {
+        "message": "Reset email sent"
+    }
+
+# -----------------------------
+# Reset Password Page (🔥 NEW)
+# -----------------------------
+@app.get("/reset-password", response_class=HTMLResponse)
+def reset_password_page(token: str):
+
+    return HTMLResponse(content=f"""
+    <html>
+    <body style="background:#0f172a;display:flex;justify-content:center;align-items:center;height:100vh;color:white;">
+    <div style="text-align:center;">
+    <h1 style="color:#00C6FF;">🔐 Reset Password</h1>
+    <p>You can now return to the app and set a new password.</p>
+    </div>
+    </body>
+    </html>
+    """)
+
+
+# -----------------------------
+# Reset Password API (🔥 NEW)
+# -----------------------------
+@app.post("/reset-password")
+async def reset_password(data: ResetPasswordRequest):
+
+    db: Session = SessionLocal()
+
+    user = db.query(User).filter(User.reset_token == data.token).first()
+
+    if not user:
+        db.close()
+        raise HTTPException(status_code=400, detail="Invalid or expired token")
+
+    hashed_password = bcrypt.hashpw(
+        data.new_password.encode("utf-8"),
+        bcrypt.gensalt()
+    ).decode("utf-8")
+
+    user.password = hashed_password
+    user.reset_token = None
+
+    db.commit()
+    db.close()
+
+    return {
+        "message": "Password updated successfully"
+    }

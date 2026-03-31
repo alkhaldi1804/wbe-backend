@@ -14,3 +14,6 @@ class User(Base):
 
     is_verified = Column(Boolean, default=False)
     verification_token = Column(String, nullable=True)
+
+    # 🔥 NEW (RESET PASSWORD)
+    reset_token = Column(String, nullable=True)
