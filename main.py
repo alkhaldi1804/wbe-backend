@@ -1,3 +1,4 @@
+from email_utils import send_reset_email
 from fastapi.responses import RedirectResponse
 from fastapi import FastAPI, UploadFile, File, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
